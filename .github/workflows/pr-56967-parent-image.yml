@@ -1,4 +1,4 @@
-name: Validate PR 56967 parent image gate
+name: Validate PR 56967 gates on official cu129 image
 
 on:
   push:
@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
-      IMAGE: public.ecr.aws/q9t5s3a7/vllm-release-repo:8d16ca6cc21931481f6c6f9ec0365874a80c6bb2-x86_64-cu129-ubuntu2404
+      IMAGE: vllm/vllm-openai@sha256:e16bac51452d79587ede476ad7fe36353f5379d2eb5a1dac6a0eb48f7fac0ea8
     steps:
       - name: Confirm CPU-only runner
         shell: bash
@@ -28,10 +28,10 @@ jobs:
           fi
           echo 'No NVIDIA devices'
 
-      - name: Inspect official parent release manifest
+      - name: Inspect pinned official cu129 release manifest
         run: docker manifest inspect "$IMAGE"
 
-      - name: Pull official parent image and record digest
+      - name: Pull official cu129 image and record digest
         id: pull
         run: |
           docker pull "$IMAGE"
@@ -75,7 +75,6 @@ jobs:
           import torchvision
           import torchaudio
           import vllm
-          import vllm._C_stable_libtorch
 
           print("torch:", torch.__version__)
           print("torch.version.cuda:", torch.version.cuda)
@@ -84,6 +83,7 @@ jobs:
           print("torchaudio:", torchaudio.__version__)
           print("vllm:", vllm.__version__)
           print("vllm path:", vllm.__file__)
+          import vllm._C_stable_libtorch
           print("vllm._C_stable_libtorch: OK")
           assert torch.version.cuda == "12.9"
           assert torch.cuda.is_available() is False
