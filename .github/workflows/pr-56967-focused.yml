@@ -1,0 +1,35 @@
+name: Validate PR 56967 focused checks
+
+on:
+  push:
+    branches:
+      - codex/validate-pr-56967-focused
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          ref: 53bd088260d3fd2e54859eda79078773941fae5e
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78
+      - name: Prepare focused check environment
+        run: |
+          test "$(git rev-parse HEAD)" = 53bd088260d3fd2e54859eda79078773941fae5e
+          uv venv --python 3.12
+          uv pip install pytest pre-commit
+      - name: Run focused Dockerfile contract tests
+        run: |
+          .venv/bin/python -m pytest -q --confcutdir=tests/tools \
+            tests/tools/test_docker_build_metadata_args.py \
+            -k 'not rust_build_cache_excludes_git_metadata'
+      - name: Run relevant pre-commit checks
+        run: |
+          .venv/bin/pre-commit run ruff-check --files tests/tools/test_docker_build_metadata_args.py
+          .venv/bin/pre-commit run ruff-format --files tests/tools/test_docker_build_metadata_args.py
+          .venv/bin/pre-commit run typos --files docker/Dockerfile tests/tools/test_docker_build_metadata_args.py
+          .venv/bin/pre-commit run validate-docker-versions --files docker/Dockerfile
